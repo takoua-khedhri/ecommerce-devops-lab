@@ -70,4 +70,4 @@
           app.listen(3000, () => console.log('Running on port 3000'));
 
     - name: Run containers
-       shell: cd /app && docker-compose up -d
+      shell: cd /app && docker-compose up -d
