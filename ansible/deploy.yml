@@ -1,0 +1,73 @@
+---
+- name: Deploy Docker App
+  hosts: web
+  become: yes
+
+  tasks:
+    - name: Update system
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create app directory
+      file:
+        path: /app
+        state: directory
+
+    - name: Create docker-compose.yml
+      copy:
+        dest: /app/docker-compose.yml
+        content: |
+          version: '3'
+          services:
+            nginx:
+              image: nginx:latest
+              ports:
+                - "80:80"
+              depends_on:
+                - app
+            app:
+              image: node:18-alpine
+              working_dir: /app
+              command: sh -c "npm init -y && npm install express && node server.js"
+              volumes:
+                - ./server.js:/app/server.js
+            mongo:
+              image: mongo:latest
+
+    - name: Create Node.js app
+      copy:
+        dest: /app/server.js
+        content: |
+          const express = require('express');
+          const app = express();
+          app.get('/', (req, res) => {
+            res.send('<h1>E-Commerce Store</h1><p>Laptop $1200</p><p>Phone $800</p>');
+          });
+          app.listen(3000, () => console.log('Running on port 3000'));
+
+    - name: Run containers
+      shell: cd /app && docker-compose up -det 
