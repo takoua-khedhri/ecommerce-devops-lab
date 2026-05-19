@@ -1,5 +1,3 @@
 terraform/credentials
 labsuser.pem
 terraform/.terraform/
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
