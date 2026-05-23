@@ -2,7 +2,6 @@
 - name: Deploy Docker App
   hosts: web
   become: yes
-
   tasks:
     - name: Update system
       yum:
@@ -37,6 +36,55 @@
         path: /app
         state: directory
 
+    - name: Create custom HTML page
+      copy:
+        dest: /app/index.html
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Mon Site</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background: linear-gradient(135deg, #1F4E79, #2E75B6);
+                margin: 0;
+              }
+              .box {
+                background: white;
+                padding: 50px;
+                border-radius: 15px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+              }
+              h1 { color: #1F4E79; font-size: 2.5em; }
+              p  { color: #555; font-size: 1.2em; }
+              .badge {
+                background: #2E75B6;
+                color: white;
+                padding: 8px 20px;
+                border-radius: 20px;
+                font-size: 0.9em;
+                margin-top: 20px;
+                display: inline-block;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="box">
+              <h1>👋 Hello Takoua !</h1>
+              <p>✅ Tout fonctionne bien !</p>
+              <p>Infrastructure déployée avec succès sur AWS</p>
+              <div class="badge">Terraform + Ansible + Docker + GitHub Actions</div>
+            </div>
+          </body>
+          </html>
+
     - name: Create docker-compose.yml
       copy:
         dest: /app/docker-compose.yml
@@ -47,27 +95,8 @@
               image: nginx:latest
               ports:
                 - "80:80"
-              depends_on:
-                - app
-            app:
-              image: node:18-alpine
-              working_dir: /app
-              command: sh -c "npm init -y && npm install express && node server.js"
               volumes:
-                - ./server.js:/app/server.js
-            mongo:
-              image: mongo:latest
-
-    - name: Create Node.js app
-      copy:
-        dest: /app/server.js
-        content: |
-          const express = require('express');
-          const app = express();
-          app.get('/', (req, res) => {
-            res.send('<h1>E-Commerce Store</h1><p>Laptop $1200</p><p>Phone $800</p>');
-          });
-          app.listen(3000, () => console.log('Running on port 3000'));
+                - ./index.html:/usr/share/nginx/html/index.html
 
     - name: Run containers
       shell: cd /app && docker-compose up -d
